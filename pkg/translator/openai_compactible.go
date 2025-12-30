@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/charleshuang3/subtrans/pkg/config"
-	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"github.com/openai/openai-go/shared"
@@ -17,18 +16,15 @@ type OpenAICompactibleTranslator struct {
 	client openai.Client
 }
 
-type TranslationResponse struct {
-	Translations []string `json:"translations"`
-}
-
-var (
-	translationResponseJSONSchema, _ = jsonschema.For[TranslationResponse](&jsonschema.ForOptions{})
-)
-
 func newOpenAITranslator(cfg *config.Config) *OpenAICompactibleTranslator {
+	apiURL := cfg.APIURL
+	if apiURL == "" {
+		apiURL = "https://api.openai.com/v1/"
+	}
+
 	client := openai.NewClient(
 		option.WithAPIKey(cfg.APIKey),
-		option.WithBaseURL(cfg.APIURL),
+		option.WithBaseURL(apiURL),
 	)
 
 	return &OpenAICompactibleTranslator{

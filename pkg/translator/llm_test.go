@@ -18,8 +18,9 @@ func getKey(t *testing.T, name string) string {
 	return key
 }
 
-func TestOpenAI(t *testing.T) {
+func TestLLMTranslator(t *testing.T) {
 	tests := []struct {
+		api             string
 		name            string
 		keyName         string
 		apiURL          string
@@ -27,18 +28,26 @@ func TestOpenAI(t *testing.T) {
 		structureOutput string
 	}{
 		{
-			name:            "JSONOutput",
+			api:             "openai",
+			name:            "OpenAI_JSONOutput",
 			keyName:         "DEEPSEEK_KEY",
 			apiURL:          "https://api.deepseek.com",
 			model:           "deepseek-chat",
 			structureOutput: config.OpenAIJSONObject,
 		},
 		{
-			name:            "JSONSchema",
+			api:             "openai",
+			name:            "OpenAI_JSONSchema",
 			keyName:         "XAI_KEY",
 			apiURL:          "https://api.x.ai/v1",
 			model:           "grok-4-1-fast-non-reasoning",
 			structureOutput: config.OpenAIJSONSchema,
+		},
+		{
+			api:     "gemini",
+			name:    "Gemini",
+			keyName: "GEMINI_KEY",
+			model:   "gemini-2.5-flash-lite",
 		},
 	}
 
@@ -49,14 +58,15 @@ func TestOpenAI(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			key := getKey(t, tt.keyName)
 			cfg := config.Config{
-				API:             config.OpenAI,
+				API:             tt.api,
 				APIKey:          key,
 				APIURL:          tt.apiURL,
 				Model:           tt.model,
 				StructureOutput: tt.structureOutput,
 				TargetLang:      "简体中文",
 			}
-			translator := NewLLMTranslator(&cfg)
+			translator, err := NewLLMTranslator(&cfg)
+			require.NoError(t, err)
 			got, err := translator.Translate(testInput)
 			require.NoError(t, err)
 			require.Equal(t, wantOutput, got)

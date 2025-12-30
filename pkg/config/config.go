@@ -45,9 +45,6 @@ func (c *Config) validate() error {
 	if c.APIKey == "" {
 		return errors.New("api_key is required")
 	}
-	if c.APIURL == "" {
-		return errors.New("api_url is required")
-	}
 	if c.Model == "" {
 		return errors.New("model is required")
 	}

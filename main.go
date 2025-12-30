@@ -42,7 +42,11 @@ func main() {
 	}
 	log.Printf("target lang: %s", cfg.TargetLang)
 
-	translator := translator.NewLLMTranslator(cfg)
+	translator, err := translator.NewLLMTranslator(cfg)
+	if err != nil {
+		log.Fatalf("Error creating translator: %v", err)
+	}
+
 	err = sub.TranslateFile(*inputFile, *outputFile, translator)
 	if err != nil {
 		log.Fatalf("Error translating file: %v", err)
