@@ -37,14 +37,8 @@ type textInfo struct {
 	text      string
 }
 
-func TranslateFile(inputPath, outputPath string, translator Translator) error {
-	subs, err := astisub.OpenFile(inputPath)
-	if err != nil {
-		return err
-	}
-
+func extractInfos(subs *astisub.Subtitles, translator Translator) []textInfo {
 	infos := []textInfo{}
-
 	for itemIndex, item := range subs.Items {
 		for lineIndex, line := range item.Lines {
 			for segIndex, seg := range line.Items {
@@ -61,38 +55,84 @@ func TranslateFile(inputPath, outputPath string, translator Translator) error {
 			}
 		}
 	}
+	return infos
+}
 
-	batches := createBatches(infos, translator.MaxLength())
+func findOffset(infos []textInfo, fromItem, fromLine, fromSeg int) (int, error) {
+	for i, info := range infos {
+		if info.itemIndex == fromItem && info.lineIndex == fromLine && info.segIndex == fromSeg {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("specified index %d,%d,%d not found in input file", fromItem, fromLine, fromSeg)
+}
 
-	offset := 0
+func processBatches(subs *astisub.Subtitles, infos []textInfo, startingOffset int, globalCompleted int, translator Translator, outputPath string, partialLogMsg string) error {
+	infosToProcess := infos[startingOffset:]
+	batches := createBatches(infosToProcess, translator.MaxLength())
+
+	currentOffset := 0
 	for i, batch := range batches {
 		log.Printf("Translating batch %d (items %d, length %d)", i+1, len(batch), getBatchLength(batch))
 		translations, err := translator.Translate(batch)
 		if err != nil {
-			if offset > 0 {
+			if currentOffset > 0 {
 				writeErr := subs.Write(outputPath)
 				if writeErr != nil {
 					log.Printf("Warning: failed to write partial translation: %v", writeErr)
 				} else {
-					log.Printf("Wrote partial translation with %d completed items", offset)
+					log.Printf(partialLogMsg, currentOffset)
 				}
 			}
 			return &TranslationError{
 				BatchNumber:    i + 1,
-				CompletedItems: offset,
-				FirstFailed:    infos[offset],
+				CompletedItems: globalCompleted + currentOffset,
+				FirstFailed:    infos[startingOffset+currentOffset],
 				Err:            err,
 			}
 		}
 		for j := 0; j < len(batch); j++ {
-			info := infos[offset+j]
+			info := infosToProcess[currentOffset+j]
 			subs.Items[info.itemIndex].Lines[info.lineIndex].Items[info.segIndex].Text = translations[j]
 		}
-		offset += len(batch)
+		currentOffset += len(batch)
 	}
-	log.Printf("Translation completed: %d items translated", len(infos))
+	log.Printf("Translation completed: %d items translated", len(infosToProcess))
 
 	return subs.Write(outputPath)
+}
+
+func TranslateFile(inputPath, outputPath string, translator Translator) error {
+	subs, err := astisub.OpenFile(inputPath)
+	if err != nil {
+		return err
+	}
+
+	infos := extractInfos(subs, translator)
+	return processBatches(subs, infos, 0, 0, translator, outputPath, "Wrote partial translation with %d completed items")
+}
+
+func TranslateFileFromIndex(inputPath, outputPath string, translator Translator, fromItem, fromLine, fromSeg int) error {
+	subs, err := astisub.OpenFile(outputPath)
+	if err != nil {
+		return fmt.Errorf("failed to open output file for resuming: %w", err)
+	}
+
+	inputSubs, err := astisub.OpenFile(inputPath)
+	if err != nil {
+		return err
+	}
+
+	infos := extractInfos(inputSubs, translator)
+
+	offset, err := findOffset(infos, fromItem, fromLine, fromSeg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Resuming translation from item %d (offset %d)", offset, offset)
+
+	return processBatches(subs, infos, offset, offset, translator, outputPath, "Wrote partial translation with %d additional completed items")
 }
 
 func createBatches(infos []textInfo, maxLength int) [][]string {
