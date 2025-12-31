@@ -35,9 +35,12 @@ Create a configuration file at one of the following locations (in order of prior
 Configuration file format:
 
 ```yaml
-api_key: "your-api-key"
-api_url: "https://api.openai.com/v1"
-model: "gpt-4o"
+api: "openai"  # or "gemini"
+api_key: "your-api-key"  # required
+api_url: "https://api.openai.com/v1"  # optional, defaults to API provider's URL
+model: "gpt-4o"  # required
+max_tokens: 128000  # optional, defaults to 128000
+structure_output: "json_schema"  # optional for OpenAI, "json_object" or "json_schema"
 target_lang: "Chinese"
 ```
 
@@ -69,6 +72,7 @@ subtrans -i input.srt -o output.srt -c /path/to/config.yaml
 | `-o` | Output file path (required) |
 | `-target-lang` | Target language (optional, overrides config) |
 | `-c` | Config file path (optional) |
+| `-from` | Resume from index (item,line,seg) (optional) |
 
 ## License
 
