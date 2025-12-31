@@ -29,6 +29,14 @@ func newGeminiTranslator(cfg *config.Config) (*GeminiTranslator, error) {
 	}, nil
 }
 
+func (t *GeminiTranslator) Length(text string) int {
+	return tokenCount(text)
+}
+
+func (t *GeminiTranslator) MaxLength() int {
+	return int(float64(t.Config.MaxTokens) * 0.95)
+}
+
 func (t *GeminiTranslator) Translate(texts []string) ([]string, error) {
 	if len(texts) == 0 {
 		return []string{}, nil

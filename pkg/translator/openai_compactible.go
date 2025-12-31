@@ -33,6 +33,14 @@ func newOpenAITranslator(cfg *config.Config) *OpenAICompactibleTranslator {
 	}
 }
 
+func (t *OpenAICompactibleTranslator) Length(text string) int {
+	return tokenCount(text)
+}
+
+func (t *OpenAICompactibleTranslator) MaxLength() int {
+	return int(float64(t.Config.MaxTokens) * 0.95)
+}
+
 func (t *OpenAICompactibleTranslator) Translate(texts []string) ([]string, error) {
 	if len(texts) == 0 {
 		return []string{}, nil

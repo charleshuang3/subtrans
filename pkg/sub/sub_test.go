@@ -10,6 +10,15 @@ import (
 
 type mockTranslator struct {
 	translations map[string]string
+	maxLength    int
+}
+
+func (m *mockTranslator) Length(text string) int {
+	return 1
+}
+
+func (m *mockTranslator) MaxLength() int {
+	return m.maxLength
 }
 
 func (m *mockTranslator) Translate(texts []string) ([]string, error) {
@@ -55,6 +64,7 @@ Hola mundo
 			"Hello world":  "Hola mundo",
 			"How are you?": "¿Cómo estás?",
 		},
+		maxLength: 10,
 	}
 
 	err = TranslateFile(tmpInput, tmpOutput, translator)
@@ -114,6 +124,8 @@ Trans 4
 			"Line 3": "Trans 3",
 			"Line 4": "Trans 4",
 		},
+		// so translator will called twice.
+		maxLength: 2,
 	}
 
 	err = TranslateFile(tmpInput, tmpOutput, translator)
@@ -158,6 +170,7 @@ func TestTranslateFileMultiSegments(t *testing.T) {
 			"are":   "estás",
 			" you?": "¿tú?",
 		},
+		maxLength: 10,
 	}
 
 	err = TranslateFile(tmpInput, tmpOutput, translator)

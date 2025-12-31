@@ -6,6 +6,7 @@ import (
 	"github.com/charleshuang3/subtrans/pkg/config"
 	"github.com/charleshuang3/subtrans/pkg/sub"
 	"github.com/google/jsonschema-go/jsonschema"
+	"github.com/tiktoken-go/tokenizer"
 )
 
 const (
@@ -20,13 +21,14 @@ Return format:
 )
 
 func NewLLMTranslator(cfg *config.Config) (sub.Translator, error) {
-	if cfg.API == config.OpenAI {
+	switch cfg.API {
+	case config.OpenAI:
 		return newOpenAITranslator(cfg), nil
-	} else if cfg.API == config.Gemini {
+	case config.Gemini:
 		return newGeminiTranslator(cfg)
+	default:
+		return nil, fmt.Errorf("Unsupported API type: %s", cfg.API)
 	}
-
-	return nil, fmt.Errorf("Unsupported API type: %s", cfg.API)
 }
 
 type TranslationResponse struct {
@@ -35,4 +37,11 @@ type TranslationResponse struct {
 
 var (
 	translationResponseJSONSchema, _ = jsonschema.For[TranslationResponse](&jsonschema.ForOptions{})
+	encoder, _                       = tokenizer.Get(tokenizer.Cl100kBase)
 )
+
+// tokenCount is approximate: not all LLMs use cl100k, and tokenCount(a)+tokenCount(b) != tokenCount(a+b).
+func tokenCount(sentence string) int {
+	ids, _, _ := encoder.Encode(sentence)
+	return len(ids)
+}
