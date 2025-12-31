@@ -40,6 +40,10 @@ func (c *Config) validate() error {
 		return errors.New("at least one LLM provider is required")
 	}
 
+	if len(c.LLMs) > 1 && c.DefaultLLM == "" {
+		return errors.New("default LLM provider is required when there are multiple LLM providers")
+	}
+
 	if c.DefaultLLM == "" {
 		return errors.New("default LLM provider is required")
 	}
