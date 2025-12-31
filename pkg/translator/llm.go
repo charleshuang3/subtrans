@@ -24,14 +24,29 @@ $SUBTITLES$
 `
 )
 
-func NewLLMTranslator(cfg *config.Config, promptKey string) (sub.Translator, error) {
-	switch cfg.API {
+func NewLLMTranslator(cfg *config.Config, promptKey, llmProvider string) (sub.Translator, error) {
+	var provider config.LLMProvider
+	var err error
+
+	if llmProvider == "default" {
+		provider, err = cfg.GetDefaultLLM()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get default LLM provider: %w", err)
+		}
+	} else {
+		provider, err = cfg.GetLLM(llmProvider)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get LLM provider '%s': %w", llmProvider, err)
+		}
+	}
+
+	switch provider.API {
 	case config.OpenAI:
-		return newOpenAITranslator(cfg, promptKey), nil
+		return newOpenAITranslator(cfg, provider, promptKey), nil
 	case config.Gemini:
-		return newGeminiTranslator(cfg, promptKey)
+		return newGeminiTranslator(cfg, provider, promptKey)
 	default:
-		return nil, fmt.Errorf("Unsupported API type: %s", cfg.API)
+		return nil, fmt.Errorf("Unsupported API type: %s", provider.API)
 	}
 }
 

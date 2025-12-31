@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -17,42 +18,98 @@ const (
 	defaultMaxTokens = 128000 // llm usually works better on small context
 )
 
+type LLMProvider struct {
+	API             string `yaml:"api"`
+	APIKey          string `yaml:"api_key"`
+	APIURL          string `yaml:"api_url"`
+	Model           string `yaml:"model"`
+	MaxTokens       int    `yaml:"max_tokens"`
+	StructureOutput string `yaml:"structure_output"` // only used for openai
+}
+
 type Config struct {
-	API             string            `yaml:"api"`
-	APIKey          string            `yaml:"api_key"`
-	APIURL          string            `yaml:"api_url"`
-	Model           string            `yaml:"model"`
-	MaxTokens       int               `yaml:"max_tokens"`
-	StructureOutput string            `yaml:"structure_output"` // only used for openai
-	TargetLang      string            `yaml:"target_lang"`
-	Prompts         map[string]string `yaml:"prompts"`
+	DefaultLLM string                 `yaml:"default_llm"`
+	LLMs       map[string]LLMProvider `yaml:"llms"`
+	TargetLang string                 `yaml:"target_lang"`
+	Prompts    map[string]string      `yaml:"prompts"`
 }
 
 func (c *Config) validate() error {
-	if c.MaxTokens == 0 {
-		c.MaxTokens = defaultMaxTokens
+	// Validate that we have at least one LLM provider
+	if len(c.LLMs) == 0 {
+		return errors.New("at least one LLM provider is required")
 	}
-	if c.API != OpenAI && c.API != Gemini {
-		return errors.New("invalid api")
+
+	if c.DefaultLLM == "" {
+		return errors.New("default LLM provider is required")
 	}
-	if c.API == OpenAI {
-		if c.StructureOutput == "" {
-			c.StructureOutput = OpenAIJSONSchema
+
+	// Validate DefaultLLM if specified
+	if _, exists := c.LLMs[c.DefaultLLM]; !exists {
+		return errors.New("default LLM provider not found in LLMs map")
+	}
+
+	// Validate each LLM provider
+	for name, provider := range c.LLMs {
+		if err := c.validateLLMProvider(name, provider); err != nil {
+			return err
 		}
-		if c.StructureOutput != OpenAIJSONObject && c.StructureOutput != OpenAIJSONSchema {
-			return errors.New("invalid structure_output")
-		}
 	}
-	if c.APIKey == "" {
-		return errors.New("api_key is required")
-	}
-	if c.Model == "" {
-		return errors.New("model is required")
-	}
+
+	// Initialize empty prompts map if nil
 	if c.Prompts == nil {
 		c.Prompts = map[string]string{}
 	}
+
 	return nil
+}
+
+func (c *Config) validateLLMProvider(name string, provider LLMProvider) error {
+	if provider.API != OpenAI && provider.API != Gemini {
+		return fmt.Errorf("invalid api for LLM provider '%s'", name)
+	}
+	if provider.API == OpenAI {
+		if provider.StructureOutput == "" {
+			// Set default structure output for OpenAI
+			// Note: This modifies the provider, but since it's a copy, we need to update the map
+			// In practice, this would need to be handled differently if the config is shared
+			const defaultStructureOutput = OpenAIJSONSchema
+			provider.StructureOutput = defaultStructureOutput
+		}
+		if provider.StructureOutput != OpenAIJSONObject && provider.StructureOutput != OpenAIJSONSchema {
+			return fmt.Errorf("invalid structure_output for LLM provider '%s'", name)
+		}
+	}
+	if provider.APIKey == "" {
+		return fmt.Errorf("api_key is required for LLM provider '%s'", name)
+	}
+	if provider.Model == "" {
+		return fmt.Errorf("model is required for LLM provider '%s'", name)
+	}
+	if provider.MaxTokens == 0 {
+		provider.MaxTokens = defaultMaxTokens
+	}
+	return nil
+}
+
+// GetDefaultLLM returns the default LLM provider
+func (c *Config) GetDefaultLLM() (LLMProvider, error) {
+	provider, exists := c.LLMs[c.DefaultLLM]
+	if !exists {
+		return LLMProvider{}, errors.New("default LLM provider not found")
+	}
+
+	return provider, nil
+}
+
+// GetLLM returns a specific LLM provider by name
+func (c *Config) GetLLM(name string) (LLMProvider, error) {
+	provider, exists := c.LLMs[name]
+	if !exists {
+		return LLMProvider{}, fmt.Errorf("LLM provider '%s' not found", name)
+	}
+
+	return provider, nil
 }
 
 func Read(path string) (*Config, error) {

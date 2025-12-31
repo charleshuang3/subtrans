@@ -11,18 +11,19 @@ import (
 
 type GeminiTranslator struct {
 	Config     *config.Config
+	Provider   config.LLMProvider
 	client     *genai.Client
 	promptTmpl string
 }
 
-func newGeminiTranslator(cfg *config.Config, promptKey string) (*GeminiTranslator, error) {
+func newGeminiTranslator(cfg *config.Config, provider config.LLMProvider, promptKey string) (*GeminiTranslator, error) {
 	promptTmpl, err := getPromptTmpl(cfg, promptKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get prompt template: %w", err)
 	}
 
 	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
-		APIKey:  cfg.APIKey,
+		APIKey:  provider.APIKey,
 		Backend: genai.BackendGeminiAPI,
 	})
 	if err != nil {
@@ -31,6 +32,7 @@ func newGeminiTranslator(cfg *config.Config, promptKey string) (*GeminiTranslato
 
 	return &GeminiTranslator{
 		Config:     cfg,
+		Provider:   provider,
 		client:     client,
 		promptTmpl: promptTmpl,
 	}, nil
@@ -41,7 +43,7 @@ func (t *GeminiTranslator) Length(text string) int {
 }
 
 func (t *GeminiTranslator) MaxLength() int {
-	return int(float64(t.Config.MaxTokens) * 0.95)
+	return int(float64(t.Provider.MaxTokens) * 0.95)
 }
 
 func (t *GeminiTranslator) Translate(texts []string) ([]string, error) {
@@ -61,7 +63,7 @@ func (t *GeminiTranslator) Translate(texts []string) ([]string, error) {
 		ResponseJsonSchema: translationResponseJSONSchema,
 	}
 
-	resp, err := t.client.Models.GenerateContent(ctx, t.Config.Model, genai.Text(prompt), generateConfig)
+	resp, err := t.client.Models.GenerateContent(ctx, t.Provider.Model, genai.Text(prompt), generateConfig)
 	if err != nil {
 		return texts, err
 	}

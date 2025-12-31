@@ -35,13 +35,21 @@ Create a configuration file at one of the following locations (in order of prior
 Configuration file format:
 
 ```yaml
-api: "openai"  # or "gemini"
-api_key: "your-api-key"  # required
-api_url: "https://api.openai.com/v1"  # optional, defaults to API provider's URL
-model: "gpt-4o"  # required
-max_tokens: 128000  # optional, defaults to 128000
-structure_output: "json_schema"  # optional for OpenAI, "json_object" or "json_schema"
+default_llm: "openai"  # name of the default LLM provider
 target_lang: "Chinese"
+llms:  # map of LLM provider configurations
+  openai:
+    api: "openai"  # or "gemini"
+    api_key: "your-openai-api-key"  # required
+    api_url: "https://api.openai.com/v1"  # optional, defaults to API provider's URL
+    model: "gpt-4o"  # required
+    max_tokens: 128000  # optional, defaults to 128000
+    structure_output: "json_schema"  # optional for OpenAI, "json_object" or "json_schema"
+  gemini:
+    api: "gemini"
+    api_key: "your-gemini-api-key"  # required
+    model: "gemini-1.5-pro"  # required
+    max_tokens: 128000  # optional, defaults to 128000
 prompts:  # optional, custom prompts for different translation contexts
   default: "Translate the following subtitle text to {target_lang}, preserving timing and formatting:"
   formal: "Translate the following subtitle text to {target_lang} using formal language:"
@@ -68,6 +76,24 @@ Use custom config file:
 subtrans -i input.srt -o output.srt -c /path/to/config.yaml
 ```
 
+Use specific LLM provider:
+
+```bash
+subtrans -i input.srt -o output.srt -llm "gemini"
+```
+
+Resume translation from specific index:
+
+```bash
+subtrans -i input.srt -o output.srt -from "0,5,2"
+```
+
+Use custom prompt:
+
+```bash
+subtrans -i input.srt -o output.srt -prompt "formal"
+```
+
 ### Flags
 
 | Flag | Description |
@@ -77,8 +103,12 @@ subtrans -i input.srt -o output.srt -c /path/to/config.yaml
 | `-target-lang` | Target language (optional, overrides config) |
 | `-c` | Config file path (optional) |
 | `-prompt` | Prompt key from config (optional, defaults to "default") |
+| `-llm` | LLM provider to use (optional, defaults to "default") |
 | `-from` | Resume from index (item,line,seg) (optional) |
 
-## License
+## License_provider
+_provider
+_provider
+_provider
 
 Apache-2.0 License

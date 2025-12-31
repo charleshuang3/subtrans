@@ -58,14 +58,19 @@ func TestLLMTranslator(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			key := getKey(t, tt.keyName)
 			cfg := config.Config{
-				API:             tt.api,
-				APIKey:          key,
-				APIURL:          tt.apiURL,
-				Model:           tt.model,
-				StructureOutput: tt.structureOutput,
-				TargetLang:      "简体中文",
+				DefaultLLM: "test-provider",
+				LLMs: map[string]config.LLMProvider{
+					"test-provider": {
+						API:             tt.api,
+						APIKey:          key,
+						APIURL:          tt.apiURL,
+						Model:           tt.model,
+						StructureOutput: tt.structureOutput,
+					},
+				},
+				TargetLang: "简体中文",
 			}
-			translator, err := NewLLMTranslator(&cfg, "default")
+			translator, err := NewLLMTranslator(&cfg, "default", "default")
 			require.NoError(t, err)
 			got, err := translator.Translate(testInput)
 			require.NoError(t, err)

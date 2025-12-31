@@ -13,29 +13,31 @@ import (
 
 type OpenAICompactibleTranslator struct {
 	Config     *config.Config
+	Provider   config.LLMProvider
 	client     openai.Client
 	promptTmpl string
 }
 
-func newOpenAITranslator(cfg *config.Config, promptKey string) *OpenAICompactibleTranslator {
+func newOpenAITranslator(cfg *config.Config, provider config.LLMProvider, promptKey string) *OpenAICompactibleTranslator {
 	promptTmpl, err := getPromptTmpl(cfg, promptKey)
 	if err != nil {
 		// Since this function returns a non-error value, we'll use the default template
 		promptTmpl = defaultPromptTmpl
 	}
 
-	apiURL := cfg.APIURL
+	apiURL := provider.APIURL
 	if apiURL == "" {
 		apiURL = "https://api.openai.com/v1/"
 	}
 
 	client := openai.NewClient(
-		option.WithAPIKey(cfg.APIKey),
+		option.WithAPIKey(provider.APIKey),
 		option.WithBaseURL(apiURL),
 	)
 
 	return &OpenAICompactibleTranslator{
 		Config:     cfg,
+		Provider:   provider,
 		client:     client,
 		promptTmpl: promptTmpl,
 	}
@@ -46,7 +48,7 @@ func (t *OpenAICompactibleTranslator) Length(text string) int {
 }
 
 func (t *OpenAICompactibleTranslator) MaxLength() int {
-	return int(float64(t.Config.MaxTokens) * 0.95)
+	return int(float64(t.Provider.MaxTokens) * 0.95)
 }
 
 func (t *OpenAICompactibleTranslator) Translate(texts []string) ([]string, error) {
@@ -62,7 +64,7 @@ func (t *OpenAICompactibleTranslator) Translate(texts []string) ([]string, error
 	ctx := context.Background()
 
 	responseFormat := openai.ChatCompletionNewParamsResponseFormatUnion{}
-	if t.Config.StructureOutput == config.OpenAIJSONObject {
+	if t.Provider.StructureOutput == config.OpenAIJSONObject {
 		param := shared.NewResponseFormatJSONObjectParam()
 		responseFormat.OfJSONObject = &param
 	} else {
@@ -76,7 +78,7 @@ func (t *OpenAICompactibleTranslator) Translate(texts []string) ([]string, error
 	}
 
 	completion, err := t.client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
-		Model: shared.ChatModel(t.Config.Model),
+		Model: shared.ChatModel(t.Provider.Model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
 			openai.UserMessage(prompt),
 		},
