@@ -40,6 +40,7 @@ func main() {
 	targetLang := flag.String("target-lang", "", "target language (optional)")
 	configPath := flag.String("c", "", "config file path (optional)")
 	fromIndex := flag.String("from", "", "resume from index (item,line,seg)")
+	promptKey := flag.String("prompt", "default", "prompt key from config (optional)")
 	flag.Parse()
 
 	if *inputFile == "" {
@@ -78,7 +79,7 @@ func main() {
 		log.Printf("resuming from index: %d,%d,%d", fromItem, fromLine, fromSeg)
 	}
 
-	translator, err := translator.NewLLMTranslator(cfg)
+	translator, err := translator.NewLLMTranslator(cfg, *promptKey)
 	if err != nil {
 		log.Fatalf("Error creating translator: %v", err)
 	}

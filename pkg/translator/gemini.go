@@ -10,11 +10,17 @@ import (
 )
 
 type GeminiTranslator struct {
-	Config *config.Config
-	client *genai.Client
+	Config     *config.Config
+	client     *genai.Client
+	promptTmpl string
 }
 
-func newGeminiTranslator(cfg *config.Config) (*GeminiTranslator, error) {
+func newGeminiTranslator(cfg *config.Config, promptKey string) (*GeminiTranslator, error) {
+	promptTmpl, err := getPromptTmpl(cfg, promptKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get prompt template: %w", err)
+	}
+
 	client, err := genai.NewClient(context.Background(), &genai.ClientConfig{
 		APIKey:  cfg.APIKey,
 		Backend: genai.BackendGeminiAPI,
@@ -24,8 +30,9 @@ func newGeminiTranslator(cfg *config.Config) (*GeminiTranslator, error) {
 	}
 
 	return &GeminiTranslator{
-		Config: cfg,
-		client: client,
+		Config:     cfg,
+		client:     client,
+		promptTmpl: promptTmpl,
 	}, nil
 }
 
@@ -42,12 +49,10 @@ func (t *GeminiTranslator) Translate(texts []string) ([]string, error) {
 		return []string{}, nil
 	}
 
-	textsJSON, err := json.Marshal(texts)
+	prompt, err := toPrompt(t.promptTmpl, t.Config.TargetLang, texts)
 	if err != nil {
-		return texts, fmt.Errorf("failed to marshal input texts: %w", err)
+		return texts, err
 	}
-
-	prompt := fmt.Sprintf(promptTmpl, t.Config.TargetLang, string(textsJSON))
 
 	ctx := context.Background()
 

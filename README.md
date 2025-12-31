@@ -42,6 +42,10 @@ model: "gpt-4o"  # required
 max_tokens: 128000  # optional, defaults to 128000
 structure_output: "json_schema"  # optional for OpenAI, "json_object" or "json_schema"
 target_lang: "Chinese"
+prompts:  # optional, custom prompts for different translation contexts
+  default: "Translate the following subtitle text to {target_lang}, preserving timing and formatting:"
+  formal: "Translate the following subtitle text to {target_lang} using formal language:"
+  casual: "Translate the following subtitle text to {target_lang} using casual, conversational language:"
 ```
 
 ## Usage
@@ -72,6 +76,7 @@ subtrans -i input.srt -o output.srt -c /path/to/config.yaml
 | `-o` | Output file path (required) |
 | `-target-lang` | Target language (optional, overrides config) |
 | `-c` | Config file path (optional) |
+| `-prompt` | Prompt key from config (optional, defaults to "default") |
 | `-from` | Resume from index (item,line,seg) (optional) |
 
 ## License

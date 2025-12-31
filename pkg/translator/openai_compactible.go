@@ -12,11 +12,18 @@ import (
 )
 
 type OpenAICompactibleTranslator struct {
-	Config *config.Config
-	client openai.Client
+	Config     *config.Config
+	client     openai.Client
+	promptTmpl string
 }
 
-func newOpenAITranslator(cfg *config.Config) *OpenAICompactibleTranslator {
+func newOpenAITranslator(cfg *config.Config, promptKey string) *OpenAICompactibleTranslator {
+	promptTmpl, err := getPromptTmpl(cfg, promptKey)
+	if err != nil {
+		// Since this function returns a non-error value, we'll use the default template
+		promptTmpl = defaultPromptTmpl
+	}
+
 	apiURL := cfg.APIURL
 	if apiURL == "" {
 		apiURL = "https://api.openai.com/v1/"
@@ -28,8 +35,9 @@ func newOpenAITranslator(cfg *config.Config) *OpenAICompactibleTranslator {
 	)
 
 	return &OpenAICompactibleTranslator{
-		Config: cfg,
-		client: client,
+		Config:     cfg,
+		client:     client,
+		promptTmpl: promptTmpl,
 	}
 }
 
@@ -46,12 +54,10 @@ func (t *OpenAICompactibleTranslator) Translate(texts []string) ([]string, error
 		return []string{}, nil
 	}
 
-	textsJSON, err := json.Marshal(texts)
+	prompt, err := toPrompt(t.promptTmpl, t.Config.TargetLang, texts)
 	if err != nil {
-		return texts, fmt.Errorf("failed to marshal input texts: %w", err)
+		return texts, err
 	}
-
-	prompt := fmt.Sprintf(promptTmpl, t.Config.TargetLang, string(textsJSON))
 
 	ctx := context.Background()
 

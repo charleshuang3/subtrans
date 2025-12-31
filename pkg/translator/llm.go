@@ -1,7 +1,9 @@
 package translator
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/charleshuang3/subtrans/pkg/config"
 	"github.com/charleshuang3/subtrans/pkg/sub"
@@ -10,25 +12,47 @@ import (
 )
 
 const (
-	promptTmpl = `Translate the following subtitle texts to %s. Return a JSON object with a "translations" array containing the translated texts in the same order:
-
-[%s]
+	defaultPromptTmpl = `Translate the following subtitle texts to $TARGET_LANG$. Return a JSON object with a "translations" array containing the translated texts in the same order:
 
 Return format:
 {
   "translations": ["translation1", "translation2", ...]
-}`
+}
+  
+Subtitle texts:
+$SUBTITLES$
+`
 )
 
-func NewLLMTranslator(cfg *config.Config) (sub.Translator, error) {
+func NewLLMTranslator(cfg *config.Config, promptKey string) (sub.Translator, error) {
 	switch cfg.API {
 	case config.OpenAI:
-		return newOpenAITranslator(cfg), nil
+		return newOpenAITranslator(cfg, promptKey), nil
 	case config.Gemini:
-		return newGeminiTranslator(cfg)
+		return newGeminiTranslator(cfg, promptKey)
 	default:
 		return nil, fmt.Errorf("Unsupported API type: %s", cfg.API)
 	}
+}
+
+func getPromptTmpl(cfg *config.Config, promptKey string) (string, error) {
+	if s, ok := cfg.Prompts[promptKey]; ok {
+		return s, nil
+	}
+	if promptKey == "default" {
+		return defaultPromptTmpl, nil
+	}
+	return "", fmt.Errorf("prompt %q not found from config", promptKey)
+}
+
+func toPrompt(promptTmpl string, lang string, texts []string) (string, error) {
+	textsJSON, err := json.Marshal(texts)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal input texts: %w", err)
+	}
+
+	s := strings.ReplaceAll(promptTmpl, "$TARGET_LANG$", lang)
+	return strings.ReplaceAll(s, "$SUBTITLES$", string(textsJSON)), nil
 }
 
 type TranslationResponse struct {

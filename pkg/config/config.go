@@ -18,13 +18,14 @@ const (
 )
 
 type Config struct {
-	API             string `yaml:"api"`
-	APIKey          string `yaml:"api_key"`
-	APIURL          string `yaml:"api_url"`
-	Model           string `yaml:"model"`
-	MaxTokens       int    `yaml:"max_tokens"`
-	StructureOutput string `yaml:"structure_output"` // only used for openai
-	TargetLang      string `yaml:"target_lang"`
+	API             string            `yaml:"api"`
+	APIKey          string            `yaml:"api_key"`
+	APIURL          string            `yaml:"api_url"`
+	Model           string            `yaml:"model"`
+	MaxTokens       int               `yaml:"max_tokens"`
+	StructureOutput string            `yaml:"structure_output"` // only used for openai
+	TargetLang      string            `yaml:"target_lang"`
+	Prompts         map[string]string `yaml:"prompts"`
 }
 
 func (c *Config) validate() error {
@@ -47,6 +48,9 @@ func (c *Config) validate() error {
 	}
 	if c.Model == "" {
 		return errors.New("model is required")
+	}
+	if c.Prompts == nil {
+		c.Prompts = map[string]string{}
 	}
 	return nil
 }
