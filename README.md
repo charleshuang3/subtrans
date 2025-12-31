@@ -106,9 +106,11 @@ subtrans -i input.srt -o output.srt -prompt "formal"
 | `-llm` | LLM provider to use (optional, defaults to "default") |
 | `-from` | Resume from index (item,line,seg) (optional) |
 
-## License_provider
-_provider
-_provider
-_provider
+## Tests
+
+There are some integration tests in this project requires keys for LLM (Gemini, Deepseek and XAI).
+You need to copy `.env.example` to `.env`, and fill in your keys. Then run `just alltest`.
+
+## License
 
 Apache-2.0 License
