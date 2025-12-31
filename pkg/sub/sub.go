@@ -1,10 +1,27 @@
 package sub
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/asticode/go-astisub"
 )
+
+type TranslationError struct {
+	BatchNumber    int
+	CompletedItems int
+	FirstFailed    textInfo
+	Err            error
+}
+
+func (e *TranslationError) Error() string {
+	return fmt.Sprintf("batch %d failed: %v (completed %d items, first failed at %d,%d,%d)",
+		e.BatchNumber, e.Err, e.CompletedItems, e.FirstFailed.itemIndex, e.FirstFailed.lineIndex, e.FirstFailed.segIndex)
+}
+
+func (e *TranslationError) Unwrap() error {
+	return e.Err
+}
 
 type Translator interface {
 	Translate(texts []string) ([]string, error)
@@ -47,20 +64,33 @@ func TranslateFile(inputPath, outputPath string, translator Translator) error {
 
 	batches := createBatches(infos, translator.MaxLength())
 
-	allTranslations := []string{}
+	offset := 0
 	for i, batch := range batches {
 		log.Printf("Translating batch %d (items %d, length %d)", i+1, len(batch), getBatchLength(batch))
 		translations, err := translator.Translate(batch)
 		if err != nil {
-			return err
+			if offset > 0 {
+				writeErr := subs.Write(outputPath)
+				if writeErr != nil {
+					log.Printf("Warning: failed to write partial translation: %v", writeErr)
+				} else {
+					log.Printf("Wrote partial translation with %d completed items", offset)
+				}
+			}
+			return &TranslationError{
+				BatchNumber:    i + 1,
+				CompletedItems: offset,
+				FirstFailed:    infos[offset],
+				Err:            err,
+			}
 		}
-		allTranslations = append(allTranslations, translations...)
+		for j := 0; j < len(batch); j++ {
+			info := infos[offset+j]
+			subs.Items[info.itemIndex].Lines[info.lineIndex].Items[info.segIndex].Text = translations[j]
+		}
+		offset += len(batch)
 	}
 	log.Printf("Translation completed: %d items translated", len(infos))
-
-	for i, info := range infos {
-		subs.Items[info.itemIndex].Lines[info.lineIndex].Items[info.segIndex].Text = allTranslations[i]
-	}
 
 	return subs.Write(outputPath)
 }
