@@ -70,7 +70,7 @@ func TestLLMTranslator(t *testing.T) {
 				},
 				TargetLang: "简体中文",
 			}
-			translator, err := NewLLMTranslator(&cfg, "default", "default")
+			translator, err := NewLLMTranslator(&cfg, "default", "default", false)
 			require.NoError(t, err)
 			got, err := translator.Translate(testInput)
 			require.NoError(t, err)

@@ -71,6 +71,7 @@ func processBatches(subs *astisub.Subtitles, infos []textInfo, startingOffset in
 	infosToProcess := infos[startingOffset:]
 	batches := createBatches(infosToProcess, translator.MaxLength())
 
+	log.Printf("total batches %d, limit length %d", len(batches), translator.MaxLength())
 	currentOffset := 0
 	for i, batch := range batches {
 		log.Printf("Translating batch %d (items %d, length %d)", i+1, len(batch), getBatchLength(batch))

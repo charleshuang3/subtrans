@@ -94,6 +94,12 @@ Use custom prompt:
 subtrans -i input.srt -o output.srt -prompt "formal"
 ```
 
+Dry run (no API calls, returns empty translations):
+
+```bash
+subtrans -i input.srt -o output.srt --dry-run
+```
+
 ### Flags
 
 | Flag | Description |
@@ -105,6 +111,7 @@ subtrans -i input.srt -o output.srt -prompt "formal"
 | `-prompt` | Prompt key from config (optional, defaults to "default") |
 | `-llm` | LLM provider to use (optional, defaults to "default") |
 | `-from` | Resume from index (item,line,seg) (optional) |
+| `--dry-run` | Dry run without making API calls (optional) |
 
 ## Tests
 

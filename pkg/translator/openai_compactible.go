@@ -16,9 +16,10 @@ type OpenAICompactibleTranslator struct {
 	Provider   config.LLMProvider
 	client     openai.Client
 	promptTmpl string
+	dryRun     bool
 }
 
-func newOpenAITranslator(cfg *config.Config, provider config.LLMProvider, promptKey string) *OpenAICompactibleTranslator {
+func newOpenAITranslator(cfg *config.Config, provider config.LLMProvider, promptKey string, dryRun bool) *OpenAICompactibleTranslator {
 	promptTmpl, err := getPromptTmpl(cfg, promptKey)
 	if err != nil {
 		// Since this function returns a non-error value, we'll use the default template
@@ -40,6 +41,7 @@ func newOpenAITranslator(cfg *config.Config, provider config.LLMProvider, prompt
 		Provider:   provider,
 		client:     client,
 		promptTmpl: promptTmpl,
+		dryRun:     dryRun,
 	}
 }
 
@@ -52,6 +54,9 @@ func (t *OpenAICompactibleTranslator) MaxLength() int {
 }
 
 func (t *OpenAICompactibleTranslator) Translate(texts []string) ([]string, error) {
+	if t.dryRun {
+		return make([]string, len(texts)), nil
+	}
 	if len(texts) == 0 {
 		return []string{}, nil
 	}

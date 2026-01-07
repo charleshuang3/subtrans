@@ -14,9 +14,10 @@ type GeminiTranslator struct {
 	Provider   config.LLMProvider
 	client     *genai.Client
 	promptTmpl string
+	dryRun     bool
 }
 
-func newGeminiTranslator(cfg *config.Config, provider config.LLMProvider, promptKey string) (*GeminiTranslator, error) {
+func newGeminiTranslator(cfg *config.Config, provider config.LLMProvider, promptKey string, dryRun bool) (*GeminiTranslator, error) {
 	promptTmpl, err := getPromptTmpl(cfg, promptKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get prompt template: %w", err)
@@ -35,6 +36,7 @@ func newGeminiTranslator(cfg *config.Config, provider config.LLMProvider, prompt
 		Provider:   provider,
 		client:     client,
 		promptTmpl: promptTmpl,
+		dryRun:     dryRun,
 	}, nil
 }
 
@@ -47,6 +49,9 @@ func (t *GeminiTranslator) MaxLength() int {
 }
 
 func (t *GeminiTranslator) Translate(texts []string) ([]string, error) {
+	if t.dryRun {
+		return make([]string, len(texts)), nil
+	}
 	if len(texts) == 0 {
 		return []string{}, nil
 	}

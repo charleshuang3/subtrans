@@ -24,7 +24,7 @@ $SUBTITLES$
 `
 )
 
-func NewLLMTranslator(cfg *config.Config, promptKey, llmProvider string) (sub.Translator, error) {
+func NewLLMTranslator(cfg *config.Config, promptKey, llmProvider string, dryRun bool) (sub.Translator, error) {
 	var provider config.LLMProvider
 	var err error
 
@@ -42,9 +42,9 @@ func NewLLMTranslator(cfg *config.Config, promptKey, llmProvider string) (sub.Tr
 
 	switch provider.API {
 	case config.OpenAI:
-		return newOpenAITranslator(cfg, provider, promptKey), nil
+		return newOpenAITranslator(cfg, provider, promptKey, dryRun), nil
 	case config.Gemini:
-		return newGeminiTranslator(cfg, provider, promptKey)
+		return newGeminiTranslator(cfg, provider, promptKey, dryRun)
 	default:
 		return nil, fmt.Errorf("Unsupported API type: %s", provider.API)
 	}

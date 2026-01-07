@@ -42,6 +42,7 @@ func main() {
 	fromIndex := flag.String("from", "", "resume from index (item,line,seg)")
 	promptKey := flag.String("prompt", "default", "prompt key from config (optional)")
 	llmProvider := flag.String("llm", "default", "LLM provider to use (optional)")
+	dryRun := flag.Bool("dry-run", false, "dry run without making API calls (optional)")
 	flag.Parse()
 
 	if *inputFile == "" {
@@ -81,10 +82,12 @@ func main() {
 		log.Printf("resuming from index: %d,%d,%d", fromItem, fromLine, fromSeg)
 	}
 
-	translator, err := translator.NewLLMTranslator(cfg, *promptKey, *llmProvider)
+	translator, err := translator.NewLLMTranslator(cfg, *promptKey, *llmProvider, *dryRun)
 	if err != nil {
 		log.Fatalf("Error creating translator: %v", err)
 	}
+
+	log.Printf("dry run: %t", *dryRun)
 
 	if *fromIndex != "" {
 		err = sub.TranslateFileFromIndex(*inputFile, *outputFile, translator, fromItem, fromLine, fromSeg)

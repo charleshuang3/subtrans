@@ -75,10 +75,7 @@ func (c *Config) validateLLMProvider(name string, provider LLMProvider) error {
 	if provider.API == OpenAI {
 		if provider.StructureOutput == "" {
 			// Set default structure output for OpenAI
-			// Note: This modifies the provider, but since it's a copy, we need to update the map
-			// In practice, this would need to be handled differently if the config is shared
-			const defaultStructureOutput = OpenAIJSONSchema
-			provider.StructureOutput = defaultStructureOutput
+			provider.StructureOutput = OpenAIJSONSchema
 		}
 		if provider.StructureOutput != OpenAIJSONObject && provider.StructureOutput != OpenAIJSONSchema {
 			return fmt.Errorf("invalid structure_output for LLM provider '%s'", name)
@@ -93,6 +90,7 @@ func (c *Config) validateLLMProvider(name string, provider LLMProvider) error {
 	if provider.MaxTokens == 0 {
 		provider.MaxTokens = defaultMaxTokens
 	}
+	c.LLMs[name] = provider
 	return nil
 }
 
