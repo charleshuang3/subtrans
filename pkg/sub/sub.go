@@ -7,6 +7,8 @@ import (
 	"github.com/asticode/go-astisub"
 )
 
+const maxItemPerBatch = 80
+
 type TranslationError struct {
 	BatchNumber    int
 	CompletedItems int
@@ -142,7 +144,7 @@ func createBatches(infos []textInfo, maxLength int) [][]string {
 	currentLength := 0
 
 	for _, info := range infos {
-		if currentLength+info.length > maxLength && len(currentBatch) > 0 {
+		if (currentLength+info.length > maxLength || len(currentBatch) >= maxItemPerBatch) && len(currentBatch) > 0 {
 			batches = append(batches, currentBatch)
 			currentBatch = []string{}
 			currentLength = 0
