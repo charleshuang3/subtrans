@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/asticode/go-astisub v0.38.0
-	github.com/goccy/go-yaml v1.19.1
+	github.com/goccy/go-yaml v1.19.2
 	github.com/google/jsonschema-go v0.4.2
 	github.com/openai/openai-go v1.12.0
 	github.com/stretchr/testify v1.11.1
