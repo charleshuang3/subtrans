@@ -9,7 +9,7 @@ require (
 	github.com/openai/openai-go v1.12.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tiktoken-go/tokenizer v0.7.0
-	google.golang.org/genai v1.40.0
+	google.golang.org/genai v1.42.0
 )
 
 require (
