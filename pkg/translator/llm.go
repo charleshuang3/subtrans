@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultPromptTmpl = `Translate the following subtitle texts to $TARGET_LANG$. Return a JSON object with a "translations" array containing the translated texts in the same order:
+	defaultPromptTmpl = `Translate the following subtitle texts to $TARGET_LANG$ line by line. Return a JSON object with a "translations" array containing the translated texts in the same order:
 
 Return format:
 {

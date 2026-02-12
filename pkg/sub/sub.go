@@ -7,7 +7,7 @@ import (
 	"github.com/asticode/go-astisub"
 )
 
-const maxItemPerBatch = 80
+const maxItemPerBatch = 10
 
 type TranslationError struct {
 	BatchNumber    int
